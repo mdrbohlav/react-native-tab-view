@@ -24,6 +24,7 @@ type Props<T> = PagerProps<T> & {
   useNativeDriver?: boolean,
   style?: Style,
   customChildComponent?: ?React.Element<any>,
+  onTabBarLayout?: (event: Object) => void,
 };
 
 type State = {|
@@ -148,6 +149,7 @@ export default class TabViewAnimated<T: *> extends React.Component<Props<T>, Sta
     navigationState: this.props.navigationState,
     jumpToIndex: this._jumpToIndex,
     useNativeDriver: this.props.useNativeDriver === true,
+    onTabBarLayout: this.props.onTabBarLayout,
   });
 
   _jumpToIndex = (index: number) => {
