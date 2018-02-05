@@ -23,6 +23,7 @@ type Props<T> = PagerProps<T> & {
   renderFooter?: (props: SceneRendererProps<T>) => ?React.Element<any>,
   useNativeDriver?: boolean,
   style?: Style,
+  customChildComponent?: ?React.Element<any>,
 };
 
 type State = {|
@@ -48,10 +49,7 @@ switch (Platform.OS) {
     break;
 }
 
-export default class TabViewAnimated<T: *> extends React.Component<
-  Props<T>,
-  State
-> {
+export default class TabViewAnimated<T: *> extends React.Component<Props<T>, State> {
   static propTypes = {
     navigationState: NavigationStatePropType.isRequired,
     onIndexChange: PropTypes.func.isRequired,
@@ -118,17 +116,12 @@ export default class TabViewAnimated<T: *> extends React.Component<
   _mounted: boolean = false;
   _nextIndex: ?number;
 
-  _renderScene = (props: SceneRendererProps<T> & Scene<T>) => {
-    return this.props.renderScene(props);
-  };
+  _renderScene = (props: SceneRendererProps<T> & Scene<T>) => this.props.renderScene(props);
 
   _handleLayout = (e: any) => {
     const { height, width } = e.nativeEvent.layout;
 
-    if (
-      this.state.layout.width === width &&
-      this.state.layout.height === height
-    ) {
+    if (this.state.layout.width === width && this.state.layout.height === height) {
       return;
     }
 
@@ -153,18 +146,17 @@ export default class TabViewAnimated<T: *> extends React.Component<
     position: this.state.position,
     layout: this.state.layout,
     navigationState: this.props.navigationState,
-    jumpTo: this._jumpTo,
+    jumpToIndex: this._jumpToIndex,
     useNativeDriver: this.props.useNativeDriver === true,
   });
 
-  _jumpTo = (key: string) => {
+  _jumpToIndex = (index: number) => {
     if (!this._mounted) {
       // We are no longer mounted, this is a no-op
       return;
     }
 
     const { canJumpToTab, navigationState } = this.props;
-    const index = navigationState.routes.findIndex(route => route.key === key);
 
     if (!canJumpToTab(navigationState.routes[index])) {
       return;
@@ -186,6 +178,7 @@ export default class TabViewAnimated<T: *> extends React.Component<
       renderPager,
       renderHeader,
       renderFooter,
+      customChildComponent,
       ...rest
     } = this.props;
 
@@ -219,6 +212,7 @@ export default class TabViewAnimated<T: *> extends React.Component<
           }),
         })}
         {renderFooter && renderFooter(props)}
+        {customChildComponent}
       </View>
     );
   }
