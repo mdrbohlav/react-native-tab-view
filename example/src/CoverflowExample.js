@@ -1,5 +1,4 @@
 /* @flow */
-/* eslint-disable import/no-commonjs */
 
 import * as React from 'react';
 import {
@@ -38,6 +37,7 @@ const initialLayout = {
 
 export default class CoverflowExample extends React.Component<*, State> {
   static title = 'Coverflow';
+  static backgroundColor = '#000';
   static appbarElevation = 0;
 
   state = {
@@ -49,8 +49,7 @@ export default class CoverflowExample extends React.Component<*, State> {
     const { width } = layout;
     const { routes } = navigationState;
     const currentIndex = routes.indexOf(route);
-    // Prepend '-1', so there are always at least 2 items in inputRange
-    const inputRange = [-1, ...routes.map((x, i) => i)];
+    const inputRange = routes.map((x, i) => i);
     const translateOutputRange = inputRange.map(i => {
       return width / 2 * (currentIndex - i) * -1;
     });
@@ -72,14 +71,17 @@ export default class CoverflowExample extends React.Component<*, State> {
     const translateX = position.interpolate({
       inputRange,
       outputRange: translateOutputRange,
+      extrapolate: 'clamp',
     });
     const scale = position.interpolate({
       inputRange,
       outputRange: scaleOutputRange,
+      extrapolate: 'clamp',
     });
     const opacity = position.interpolate({
       inputRange,
       outputRange: opacityOutputRange,
+      extrapolate: 'clamp',
     });
 
     return {
@@ -121,7 +123,7 @@ export default class CoverflowExample extends React.Component<*, State> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#222',
+    backgroundColor: '#000',
   },
   page: {
     flex: 1,

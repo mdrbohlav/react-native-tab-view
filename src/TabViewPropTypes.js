@@ -24,6 +24,7 @@ export const SceneRendererPropType = {
   navigationState: NavigationStatePropType.isRequired,
   position: PropTypes.object.isRequired,
   jumpTo: PropTypes.func.isRequired,
+  jumpToIndex: PropTypes.func.isRequired, // Deprecated, use `jumpTo` instead
   useNativeDriver: PropTypes.bool,
 };
 
@@ -41,5 +42,8 @@ export const PagerRendererPropType = {
   animationEnabled: PropTypes.bool,
   swipeEnabled: PropTypes.bool,
   useNativeDriver: PropTypes.bool,
+  onSwipeStart: PropTypes.func,
+  onSwipeEnd: PropTypes.func,
+  onAnimationEnd: PropTypes.func,
   children: PropTypes.node.isRequired,
 };

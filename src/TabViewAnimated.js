@@ -9,6 +9,7 @@ import type {
   SceneRendererProps,
   NavigationState,
   Layout,
+<<<<<<< HEAD
   PagerProps,
   Style,
 } from "./TabViewTypeDefinitions";
@@ -26,9 +27,29 @@ type Props<T> = PagerProps<T> & {
   customChildComponent?: ?React.Element<any>,
   onTabBarLayout?: (event: Object) => void,
 };
+=======
+  PagerCommonProps,
+  PagerExtraProps,
+} from './TabViewTypeDefinitions';
+import type { ViewStyleProp } from 'react-native/Libraries/StyleSheet/StyleSheet';
+
+type Props<T> = PagerCommonProps<T> &
+  PagerExtraProps & {
+    navigationState: NavigationState<T>,
+    onIndexChange: (index: number) => mixed,
+    initialLayout?: Layout,
+    renderPager: (props: *) => React.Element<any>,
+    renderScene: (
+      props: SceneRendererProps<T> & Scene<T>
+    ) => ?React.Element<any>,
+    renderHeader?: (props: SceneRendererProps<T>) => ?React.Element<any>,
+    renderFooter?: (props: SceneRendererProps<T>) => ?React.Element<any>,
+    useNativeDriver?: boolean,
+    style?: ViewStyleProp,
+  };
+>>>>>>> 7f164536a2a1a9055520ba5314cf1e26ddfec8a4
 
 type State = {|
-  loaded: Array<number>,
   layout: Layout & { measured: boolean },
   layoutXY: Animated.ValueXY,
   panX: Animated.Value,
@@ -67,7 +88,7 @@ export default class TabViewAnimated<T: *> extends React.Component<Props<T>, Sta
 
   static defaultProps = {
     canJumpToTab: () => true,
-    renderPager: props => <TabViewPager {...props} />,
+    renderPager: (props: *) => <TabViewPager {...props} />,
     initialLayout: {
       height: 0,
       width: 0,
@@ -97,7 +118,6 @@ export default class TabViewAnimated<T: *> extends React.Component<Props<T>, Sta
     );
 
     this.state = {
-      loaded: [navigationState.index],
       layout,
       layoutXY,
       panX,
@@ -147,12 +167,24 @@ export default class TabViewAnimated<T: *> extends React.Component<Props<T>, Sta
     position: this.state.position,
     layout: this.state.layout,
     navigationState: this.props.navigationState,
+    jumpTo: this._jumpTo,
     jumpToIndex: this._jumpToIndex,
     useNativeDriver: this.props.useNativeDriver === true,
     onTabBarLayout: this.props.onTabBarLayout,
   });
 
   _jumpToIndex = (index: number) => {
+    const { key } = this.props.navigationState.routes[index];
+
+    console.warn(
+      'Method `jumpToIndex` is deprecated. Please upgrade your code to use `jumpTo` instead.',
+      `Change your code from \`jumpToIndex(${index})\` to \`jumpTo('${key}').\``
+    );
+
+    this._jumpTo(key);
+  };
+
+  _jumpTo = (key: string) => {
     if (!this._mounted) {
       // We are no longer mounted, this is a no-op
       return;
@@ -187,32 +219,30 @@ export default class TabViewAnimated<T: *> extends React.Component<Props<T>, Sta
     const props = this._buildSceneRendererProps();
 
     return (
-      <View
-        onLayout={this._handleLayout}
-        loaded={this.state.loaded}
-        style={[styles.container, this.props.style]}
-      >
+      <View collapsable={false} style={[styles.container, this.props.style]}>
         {renderHeader && renderHeader(props)}
-        {renderPager({
-          ...props,
-          ...rest,
-          panX: this.state.panX,
-          offsetX: this.state.offsetX,
-          children: navigationState.routes.map((route, index) => {
-            const scene = this._renderScene({
-              ...props,
-              route,
-              index,
-              focused: index === navigationState.index,
-            });
+        <View onLayout={this._handleLayout} style={styles.pager}>
+          {renderPager({
+            ...props,
+            ...rest,
+            panX: this.state.panX,
+            offsetX: this.state.offsetX,
+            children: navigationState.routes.map((route, index) => {
+              const scene = this._renderScene({
+                ...props,
+                route,
+                index,
+                focused: index === navigationState.index,
+              });
 
-            if (scene) {
-              return React.cloneElement(scene, { key: route.key });
-            }
+              if (scene) {
+                return React.cloneElement(scene, { key: route.key });
+              }
 
-            return scene;
-          }),
-        })}
+              return scene;
+            }),
+          })}
+        </View>
         {renderFooter && renderFooter(props)}
         {customChildComponent}
       </View>
@@ -224,5 +254,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     overflow: "hidden",
+  },
+  pager: {
+    flex: 1,
   },
 });

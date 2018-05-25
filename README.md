@@ -34,7 +34,7 @@ yarn add react-native-tab-view react-native-gesture-handler
 ```
 
 
-## Example
+## Quick Start
 
 ```js
 import * as React from 'react';
@@ -70,7 +70,6 @@ export default class TabViewExample extends React.Component {
   render() {
     return (
       <TabViewAnimated
-        style={styles.container}
         navigationState={this.state}
         renderScene={this._renderScene}
         renderHeader={this._renderHeader}
@@ -87,6 +86,17 @@ const styles = StyleSheet.create({
   },
 });
 ```
+
+
+## Integration with React Navigation
+
+React Navigation integration can be achieved by the [react-navigation-tabs](https://github.com/react-navigation/react-navigation-tabs) package. Note that while it's easier to use, it is not as flexible as using the library directly.
+
+
+## Examples on Snack
+
+- [Quick Start](https://snack.expo.io/@satya164/react-native-tab-view-quick-start)
+- [Custom Tab Bar](https://snack.expo.io/@satya164/custom-tabbar-example)
 
 
 ## API
@@ -127,6 +137,7 @@ Material design themed tab bar. Can be used as both top and bottom tab bar.
 - `pressColor` - color for material ripple (Android >= 5.0 only)
 - `pressOpacity` - opacity for pressed tab (iOS and Android < 5.0 only)
 - `scrollEnabled` - whether to enable scrollable tabs
+- `bounces` - whether the tab bar bounces when scrolling
 - `useNativeDriver` - whether to use native animations
 - `tabStyle` - style object for the individual tabs in the tab bar
 - `indicatorStyle` - style object for the active indicator
@@ -139,13 +150,13 @@ Cross-platform pager based on the [`PanResponder`](https://facebook.github.io/re
 
 #### Props
 
-- `configureTransition` - optional callback which returns a configuration for the transition
 - `animationEnabled` - whether to enable page change animation
 - `swipeEnabled` - whether to enable swipe gestures
 - `swipeDistanceThreshold` - minimum swipe distance to trigger page switch
 - `swipeVelocityThreshold` - minimum swipe velocity to trigger page switch
 - `onSwipeStart` - optional callback when a swipe gesture starts
 - `onSwipeEnd` - optional callback when a swipe gesture ends
+- `onAnimationEnd` - optional callback when the transition animation ends
 - `children` - React Element(s) to render
 
 ### `<TabViewPagerScroll />`
@@ -156,6 +167,9 @@ Cross-platform pager based on [`ScrollView`](https://facebook.github.io/react-na
 
 - `animationEnabled` - whether to enable page change animation
 - `swipeEnabled` - whether to enable swipe gestures
+- `onSwipeStart` - optional callback when a swipe gesture starts
+- `onSwipeEnd` - optional callback when a swipe gesture ends
+- `onAnimationEnd` - optional callback when the transition animation ends
 - `children` - React Element(s) to render
 
 There are some caveats when using this pager on Android, such as poor support for intial index other than `0` and weird animation curves.
@@ -168,6 +182,10 @@ Android only pager based on `ViewPagerAndroid` (default on Android).
 
 - `animationEnabled` - whether to enable page change animation
 - `swipeEnabled` - whether to enable swipe gestures
+- `onSwipeStart` - optional callback when a swipe gesture starts
+- `onSwipeEnd` - optional callback when a swipe gesture ends
+- `onAnimationEnd` - optional callback when the transition animation ends
+- `keyboardDismissMode` - whether the keyboard gets dismissed in response to a drag in [ViewPagerAndroid](https://facebook.github.io/react-native/docs/viewpagerandroid.html#keyboarddismissmode) (Default: `on-drag`)
 - `children` - React Element(s) to render
 
 ### `<TabViewPagerExperimental />`
@@ -179,10 +197,13 @@ Cross-platform pager component based on [`react-native-gesture-handler`](https:/
 - `GestureHandler` - the gesture handler module to use
 - `animationEnabled` - whether to enable page change animation
 - `swipeEnabled` - whether to enable swipe gestures
+- `onSwipeStart` - optional callback when a swipe gesture starts
+- `onSwipeEnd` - optional callback when a swipe gesture ends
+- `onAnimationEnd` - optional callback when the transition animation ends
 - `useNativeDriver` - whether to use native animations
 - `children` - React Element(s) to render
 
-This pager is still experimental as the underlying library is still in alpha. To use this pager, you'll need to [link the `react-native-gesture-handler` library](https://github.com/kmagiera/react-native-gesture-handler#installation), and pass it as a prop to the pager:
+This pager is still experimental. To use this pager, you'll need to [link the `react-native-gesture-handler` library](https://github.com/kmagiera/react-native-gesture-handler#installation), and pass it as a prop to the pager:
 
 ```js
 import * as GestureHandler from 'react-native-gesture-handler';
@@ -206,7 +227,7 @@ renderScene = SceneMap({
 Each scene receives the following props:
 
 - `route` - the current route rendered by the component
-- `jumpTo` - method to jump to other tabs, it receives `route.key` as it's argument
+- `jumpTo` - method to jump to other tabs, takes a `route.key` as it's argument
 
 All the scenes rendered with `SceneMap` are optimized using `React.PureComponent` and don't re-render when parent's props or states change. If you don't want this behaviour, or want to pass additional props to your scene components, use `renderScene` directly instead of using `SceneMap`.
 

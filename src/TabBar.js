@@ -2,10 +2,22 @@
 
 import * as React from 'react';
 import PropTypes from 'prop-types';
-import { Animated, StyleSheet, View, ScrollView, Platform, I18nManager } from 'react-native';
+import {
+  Animated,
+  NativeModules,
+  StyleSheet,
+  View,
+  ScrollView,
+  Platform,
+  I18nManager,
+} from 'react-native';
 import TouchableItem from './TouchableItem';
 import { SceneRendererPropType } from './TabViewPropTypes';
-import type { Scene, SceneRendererProps, Style } from './TabViewTypeDefinitions';
+import type { Scene, SceneRendererProps } from './TabViewTypeDefinitions';
+import type {
+  ViewStyleProp,
+  TextStyleProp,
+} from 'react-native/Libraries/StyleSheet/StyleSheet';
 
 type IndicatorProps<T> = SceneRendererProps<T> & {
   width: number,
@@ -13,6 +25,7 @@ type IndicatorProps<T> = SceneRendererProps<T> & {
 
 type Props<T> = SceneRendererProps<T> & {
   scrollEnabled?: boolean,
+  bounces?: boolean,
   pressColor?: string,
   pressOpacity?: number,
   getLabelText: (scene: Scene<T>) => ?string,
@@ -20,11 +33,11 @@ type Props<T> = SceneRendererProps<T> & {
   renderIcon?: (scene: Scene<T>) => ?React.Element<any>,
   renderBadge?: (scene: Scene<T>) => ?React.Element<any>,
   renderIndicator?: (props: IndicatorProps<T>) => ?React.Element<any>,
-  onTabPress?: (scene: Scene<T>) => void,
-  tabStyle?: Style,
-  indicatorStyle?: Style,
-  labelStyle?: Style,
-  style?: Style,
+  onTabPress?: (scene: Scene<T>) => mixed,
+  tabStyle?: ViewStyleProp,
+  indicatorStyle?: ViewStyleProp,
+  labelStyle?: TextStyleProp,
+  style?: ViewStyleProp,
   onTabBarLayout?: (event: Object) => null,
 };
 
@@ -34,10 +47,13 @@ type State = {|
   initialOffset: ?{| x: number, y: number |},
 |};
 
+const useNativeDriver = Boolean(NativeModules.NativeAnimatedModule);
+
 export default class TabBar<T: *> extends React.Component<Props<T>, State> {
   static propTypes = {
     ...SceneRendererPropType,
     scrollEnabled: PropTypes.bool,
+    bounces: PropTypes.bool,
     pressColor: TouchableItem.propTypes.pressColor,
     pressOpacity: TouchableItem.propTypes.pressOpacity,
     getLabelText: PropTypes.func,
@@ -50,7 +66,7 @@ export default class TabBar<T: *> extends React.Component<Props<T>, State> {
   };
 
   static defaultProps = {
-    getLabelText: ({ route }) =>
+    getLabelText: ({ route }: Scene<T>) =>
       typeof route.title === 'string' ? route.title.toUpperCase() : route.title,
   };
 
@@ -82,26 +98,30 @@ export default class TabBar<T: *> extends React.Component<Props<T>, State> {
   }
 
   componentDidMount() {
-    this._adjustScroll(this.props.navigationState.index);
     this.props.scrollEnabled && this._startTrackingPosition();
   }
 
   componentDidUpdate(prevProps: Props<T>) {
     const prevTabWidth = this._getTabWidth(prevProps);
     const currentTabWidth = this._getTabWidth(this.props);
+    const pendingIndex =
+      typeof this._pendingIndex === 'number'
+        ? this._pendingIndex
+        : this.props.navigationState.index;
+
+    this._pendingIndex = null;
 
     if (prevTabWidth !== currentTabWidth && currentTabWidth) {
       this.state.visibility.setValue(1);
     }
 
     if (
-      (prevProps.navigationState !== this.props.navigationState ||
-        prevProps.layout !== this.props.layout ||
-        prevTabWidth !== currentTabWidth) &&
-      this.props.navigationState.index !== this._pendingIndex
+      prevProps.navigationState.routes !== this.props.navigationState.routes ||
+      prevProps.layout.width !== this.props.layout.width
     ) {
-      this._resetScroll(this.props.navigationState.index, Boolean(prevProps.layout.width));
-      this._pendingIndex = null;
+      this._resetScroll(this.props.navigationState.index, false);
+    } else if (prevProps.navigationState.index !== pendingIndex) {
+      this._resetScroll(this.props.navigationState.index);
     }
   }
 
@@ -110,10 +130,10 @@ export default class TabBar<T: *> extends React.Component<Props<T>, State> {
   }
 
   _scrollView: ?ScrollView;
+  _isIntial: boolean = true;
   _isManualScroll: boolean = false;
   _isMomentumScroll: boolean = false;
   _pendingIndex: ?number;
-  _scrollDelta: number = 0;
   _scrollResetCallback: any;
   _lastPanX: ?number;
   _lastOffsetX: ?number;
@@ -138,6 +158,12 @@ export default class TabBar<T: *> extends React.Component<Props<T>, State> {
 
   _handlePosition = () => {
     const { navigationState, layout } = this.props;
+
+    if (layout.width === 0) {
+      // Don't do anything if we don't have layout yet
+      return;
+    }
+
     const panX = typeof this._lastPanX === 'number' ? this._lastPanX : 0;
     const offsetX =
       typeof this._lastOffsetX === 'number'
@@ -214,18 +240,11 @@ export default class TabBar<T: *> extends React.Component<Props<T>, State> {
 
   _handleTabPress = (scene: Scene<*>) => {
     this._pendingIndex = scene.index;
-    this.props.jumpToIndex(scene.index);
     if (this.props.onTabPress) {
       this.props.onTabPress(scene);
     }
-  };
 
-  _handleScroll = event => {
-    if (this._isManualScroll) {
-      this._scrollDelta =
-        this._getScrollAmount(this.props, this.props.navigationState.index) -
-        event.nativeEvent.contentOffset.x;
-    }
+    this.props.jumpTo(scene.route.key);
   };
 
   _normalizeScrollValue = (props, value) => {
@@ -253,10 +272,12 @@ export default class TabBar<T: *> extends React.Component<Props<T>, State> {
         this._scrollView.scrollTo({
           x: this._normalizeScrollValue(
             this.props,
-            this._getScrollAmount(this.props, value) - this._scrollDelta
+            this._getScrollAmount(this.props, value)
           ),
-          animated: false,
+          animated: !this._isIntial, // Disable animation for the initial render
         });
+
+      this._isIntial = false;
     }
   };
 
@@ -264,7 +285,6 @@ export default class TabBar<T: *> extends React.Component<Props<T>, State> {
     if (this.props.scrollEnabled) {
       global.cancelAnimationFrame(this._scrollResetCallback);
       this._scrollResetCallback = global.requestAnimationFrame(() => {
-        this._scrollDelta = 0;
         this._scrollView &&
           this._scrollView.scrollTo({
             x: this._getScrollAmount(this.props, value),
@@ -306,7 +326,7 @@ export default class TabBar<T: *> extends React.Component<Props<T>, State> {
   _setRef = (el: ?Animated.ScrollView) => (this._scrollView = el && el._component);
 
   render() {
-    const { position, navigationState, scrollEnabled, onTabBarLayout } = this.props;
+    const { position, navigationState, scrollEnabled, bounces, onTabBarLayout } = this.props;
     const { routes, index } = navigationState;
     const tabWidth = this._getTabWidth(this.props);
     const tabBarWidth = tabWidth * routes.length;
@@ -334,7 +354,7 @@ export default class TabBar<T: *> extends React.Component<Props<T>, State> {
             horizontal
             keyboardShouldPersistTaps="handled"
             scrollEnabled={scrollEnabled}
-            bounces={false}
+            bounces={bounces}
             alwaysBounceHorizontal={false}
             scrollsToTop={false}
             showsHorizontalScrollIndicator={false}
@@ -350,7 +370,7 @@ export default class TabBar<T: *> extends React.Component<Props<T>, State> {
                   },
                 },
               ],
-              { useNativeDriver: true, listener: this._handleScroll }
+              { useNativeDriver }
             )}
             onScrollBeginDrag={this._handleBeginDrag}
             onScrollEndDrag={this._handleEndDrag}
@@ -450,7 +470,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scroll: {
-    overflow: Platform.OS === 'web' ? 'auto' : 'scroll',
+    overflow: Platform.OS === 'web' ? ('auto': any) : 'scroll',
   },
   tabBar: {
     backgroundColor: '#2196f3',

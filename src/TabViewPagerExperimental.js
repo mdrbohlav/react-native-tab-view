@@ -14,8 +14,8 @@ type Props<T> = PagerRendererProps<T> & {
 
 const DefaultTransitionSpec = {
   timing: Animated.spring,
-  tension: 75,
-  friction: 25,
+  tension: 68,
+  friction: 12,
 };
 
 export default class TabViewPagerExperimental<T: *> extends React.Component<
@@ -29,15 +29,19 @@ export default class TabViewPagerExperimental<T: *> extends React.Component<
   };
 
   static defaultProps = {
-    GestureHandler:
-      global.__expo && global.__expo.DangerZone
-        ? global.__expo.DangerZone.GestureHandler
-        : undefined,
     canJumpToTab: () => true,
   };
 
   componentDidUpdate(prevProps: Props<T>) {
-    if (prevProps.navigationState.index !== this.props.navigationState.index) {
+    if (
+      prevProps.navigationState.routes !== this.props.navigationState.routes ||
+      prevProps.layout.width !== this.props.layout.width
+    ) {
+      this._transitionTo(this.props.navigationState.index, undefined, false);
+    } else if (
+      prevProps.navigationState.index !== this.props.navigationState.index &&
+      this.props.navigationState.index !== this._pendingIndex
+    ) {
       this._transitionTo(this.props.navigationState.index);
     }
   }
@@ -45,7 +49,11 @@ export default class TabViewPagerExperimental<T: *> extends React.Component<
   _handleHandlerStateChange = event => {
     const { GestureHandler } = this.props;
 
-    if (event.nativeEvent.state === GestureHandler.State.END) {
+    if (event.nativeEvent.state === GestureHandler.State.BEGIN) {
+      this.props.onSwipeStart && this.props.onSwipeStart();
+    } else if (event.nativeEvent.state === GestureHandler.State.END) {
+      this.props.onSwipeEnd && this.props.onSwipeEnd();
+
       const {
         navigationState,
         layout,
@@ -90,10 +98,14 @@ export default class TabViewPagerExperimental<T: *> extends React.Component<
     }
   };
 
-  _transitionTo = (index: number, velocity?: number) => {
+  _transitionTo = (
+    index: number,
+    velocity?: number,
+    animated?: boolean = true
+  ) => {
     const offset = -index * this.props.layout.width;
 
-    if (this.props.animationEnabled === false) {
+    if (this.props.animationEnabled === false || animated === false) {
       this.props.panX.setValue(0);
       this.props.offsetX.setValue(offset);
       return;
@@ -119,6 +131,7 @@ export default class TabViewPagerExperimental<T: *> extends React.Component<
       if (finished) {
         const route = this.props.navigationState.routes[index];
         this.props.jumpTo(route.key);
+        this.props.onAnimationEnd && this.props.onAnimationEnd();
         this._pendingIndex = null;
       }
     });
@@ -172,7 +185,9 @@ export default class TabViewPagerExperimental<T: *> extends React.Component<
               style={
                 width
                   ? { width }
-                  : i === navigationState.index ? StyleSheet.absoluteFill : null
+                  : i === navigationState.index
+                    ? StyleSheet.absoluteFill
+                    : null
               }
             >
               {i === navigationState.index || width ? child : null}
