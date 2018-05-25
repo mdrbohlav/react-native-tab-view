@@ -1,9 +1,9 @@
 /* @flow */
 
-import * as React from 'react';
-import PropTypes from 'prop-types';
-import { Animated, Platform, View, StyleSheet } from 'react-native';
-import { NavigationStatePropType } from './TabViewPropTypes';
+import * as React from "react";
+import PropTypes from "prop-types";
+import { Animated, Platform, View, StyleSheet } from "react-native";
+import { NavigationStatePropType } from "./TabViewPropTypes";
 import type {
   Scene,
   SceneRendererProps,
@@ -11,7 +11,7 @@ import type {
   Layout,
   PagerProps,
   Style,
-} from './TabViewTypeDefinitions';
+} from "./TabViewTypeDefinitions";
 
 type Props<T> = PagerProps<T> & {
   navigationState: NavigationState<T>,
@@ -39,14 +39,14 @@ type State = {|
 let TabViewPager;
 
 switch (Platform.OS) {
-  case 'android':
-    TabViewPager = require('./TabViewPagerAndroid').default;
+  case "android":
+    TabViewPager = require("./TabViewPagerAndroid").default;
     break;
-  case 'ios':
-    TabViewPager = require('./TabViewPagerScroll').default;
+  case "ios":
+    TabViewPager = require("./TabViewPagerScroll").default;
     break;
   default:
-    TabViewPager = require('./TabViewPagerPan').default;
+    TabViewPager = require("./TabViewPagerPan").default;
     break;
 }
 
@@ -223,6 +223,6 @@ export default class TabViewAnimated<T: *> extends React.Component<Props<T>, Sta
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 });
