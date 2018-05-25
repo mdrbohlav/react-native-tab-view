@@ -9,25 +9,6 @@ import type {
   SceneRendererProps,
   NavigationState,
   Layout,
-<<<<<<< HEAD
-  PagerProps,
-  Style,
-} from "./TabViewTypeDefinitions";
-
-type Props<T> = PagerProps<T> & {
-  navigationState: NavigationState<T>,
-  onIndexChange: (index: number) => void,
-  initialLayout?: Layout,
-  renderPager: (props: *) => React.Element<any>,
-  renderScene: (props: SceneRendererProps<T> & Scene<T>) => ?React.Element<any>,
-  renderHeader?: (props: SceneRendererProps<T>) => ?React.Element<any>,
-  renderFooter?: (props: SceneRendererProps<T>) => ?React.Element<any>,
-  useNativeDriver?: boolean,
-  style?: Style,
-  customChildComponent?: ?React.Element<any>,
-  onTabBarLayout?: (event: Object) => void,
-};
-=======
   PagerCommonProps,
   PagerExtraProps,
 } from './TabViewTypeDefinitions';
@@ -46,8 +27,9 @@ type Props<T> = PagerCommonProps<T> &
     renderFooter?: (props: SceneRendererProps<T>) => ?React.Element<any>,
     useNativeDriver?: boolean,
     style?: ViewStyleProp,
+    customChildComponent?: ?React.Element<any>,
+    onTabBarLayout?: (event: Object) => void,
   };
->>>>>>> 7f164536a2a1a9055520ba5314cf1e26ddfec8a4
 
 type State = {|
   layout: Layout & { measured: boolean },
